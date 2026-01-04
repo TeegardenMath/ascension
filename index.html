@@ -51,9 +51,17 @@
         
         .game-container {
             width: 95%;
-            max-width: 1200px;
+            max-width: 1400px;
             position: relative;
             z-index: 1;
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+        
+        .game-board-wrapper {
+            flex: 1;
+            min-width: 0;
         }
         
         .title {
@@ -342,6 +350,115 @@
             transition: all 0.3s ease-out;
         }
         
+        .chat-panel {
+            width: 320px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--gold);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 40px var(--shadow);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+            max-height: 700px;
+        }
+        
+        .chat-header {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 1rem;
+            text-align: center;
+            letter-spacing: 0.05em;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            padding-right: 0.5rem;
+            min-height: 400px;
+            max-height: 600px;
+        }
+        
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--gold);
+            border-radius: 4px;
+        }
+        
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: var(--gold-light);
+        }
+        
+        .chat-message {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .chat-message.player {
+            align-items: flex-end;
+        }
+        
+        .chat-message.opponent {
+            align-items: flex-start;
+        }
+        
+        .chat-sender {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            padding: 0 0.5rem;
+        }
+        
+        .chat-bubble {
+            max-width: 80%;
+            padding: 0.7rem 1rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        
+        .chat-message.player .chat-bubble {
+            background: rgba(212, 175, 55, 0.3);
+            color: var(--cream);
+            border: 1px solid var(--gold);
+            border-bottom-right-radius: 4px;
+        }
+        
+        .chat-message.opponent .chat-bubble {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--cream);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom-left-radius: 4px;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         .card.disabled {
             opacity: 0.4;
             cursor: not-allowed;
@@ -513,6 +630,19 @@
         }
         
         @media (max-width: 900px) {
+            .game-container {
+                flex-direction: column;
+            }
+            
+            .chat-panel {
+                width: 100%;
+                max-height: 400px;
+            }
+            
+            .chat-messages {
+                min-height: 300px;
+            }
+            
             .title {
                 font-size: 2.5rem;
                 margin-bottom: 1rem;
@@ -642,42 +772,50 @@
 </head>
 <body>
     <div class="game-container">
-        <h1 class="title">ASCENSION</h1>
-        
-        <div class="game-board">
-            <div class="status-bar">
-                <button class="control-btn" id="new-game-btn" onclick="handleNewGame()">New Game</button>
-                <div class="ai-selector">
-                    <label for="ai-strategy">Opponent:</label>
-                    <select id="ai-strategy" onchange="handleStrategyChange()">
-                        <option value="random">Random</option>
-                        <option value="play-high">Play High</option>
-                        <option value="play-low">Play Low</option>
-                        <option value="smart">Smart</option>
-                    </select>
-                </div>
-                <div class="win-tracker">
-                    <span class="win-label">Wins:</span>
-                    <span class="win-count" id="player-wins">0</span>
-                    <span class="win-separator">-</span>
-                    <span class="win-count" id="opponent-wins">0</span>
-                </div>
-                <button class="control-btn" onclick="showRules()">Rules</button>
-            </div>
+        <div class="game-board-wrapper">
+            <h1 class="title">ASCENSION</h1>
             
-            <div class="play-area">
-                <div class="opponent-area">
-                    <div class="opponent-hand" id="opponent-hand"></div>
+            <div class="game-board">
+                <div class="status-bar">
+                    <button class="control-btn" id="new-game-btn" onclick="handleNewGame()">New Game</button>
+                    <div class="ai-selector">
+                        <label for="ai-strategy">Opponent:</label>
+                        <select id="ai-strategy" onchange="handleStrategyChange()">
+                            <option value="random">Random</option>
+                            <option value="play-high">Play High</option>
+                            <option value="play-low">Play Low</option>
+                            <option value="smart">Smart</option>
+                        </select>
+                    </div>
+                    <div class="win-tracker">
+                        <span class="win-label">Wins:</span>
+                        <span class="win-count" id="player-wins">0</span>
+                        <span class="win-separator">-</span>
+                        <span class="win-count" id="opponent-wins">0</span>
+                    </div>
+                    <button class="control-btn" onclick="showRules()">Rules</button>
                 </div>
                 
-                <div class="table-area">
-                    <div class="table-label">Table</div>
-                    <div class="card-stack" id="card-stack"></div>
+                <div class="play-area">
+                    <div class="opponent-area">
+                        <div class="opponent-hand" id="opponent-hand"></div>
+                    </div>
+                    
+                    <div class="table-area">
+                        <div class="table-label">Table</div>
+                        <div class="card-stack" id="card-stack"></div>
+                    </div>
+                    
+                    <div class="player-area">
+                        <div class="player-hand" id="player-hand"></div>
+                    </div>
                 </div>
-                
-                <div class="player-area">
-                    <div class="player-hand" id="player-hand"></div>
-                </div>
+            </div>
+        </div>
+        
+        <div class="chat-panel">
+            <div class="chat-header">Messages</div>
+            <div class="chat-messages" id="chat-messages">
             </div>
         </div>
     </div>
@@ -721,6 +859,32 @@
         };
         
         let newGameConfirm = false;
+        
+        // Chat functions
+        function addChatMessage(sender, message) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}`;
+            
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'chat-sender';
+            senderDiv.textContent = sender === 'player' ? 'You' : 'Opponent';
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'chat-bubble';
+            bubbleDiv.textContent = message;
+            
+            messageDiv.appendChild(senderDiv);
+            messageDiv.appendChild(bubbleDiv);
+            chatMessages.appendChild(messageDiv);
+            
+            // Auto-scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function clearChat() {
+            document.getElementById('chat-messages').innerHTML = '';
+        }
 
         // Card definitions
         const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
@@ -823,6 +987,9 @@
                 return false;
             }
 
+            // Determine if this is a suit change
+            const isSuitChange = gameState.tableCard && card.suit !== gameState.tableCard.suit;
+            
             // Remove card from hand in game state
             if (isPlayer) {
                 // Animate the card removal from DOM
@@ -832,11 +999,25 @@
                 gameState.playerHand = gameState.playerHand.filter(c => 
                     c.suit !== card.suit || c.rank !== card.rank
                 );
+                
+                // Add chat message
+                if (isSuitChange) {
+                    addChatMessage('player', getSuitChangeMessage(card.suit));
+                } else {
+                    addChatMessage('player', getRandomSuitMessage(card.suit));
+                }
             } else {
                 gameState.opponentHand = gameState.opponentHand.filter(c => 
                     c.suit !== card.suit || c.rank !== card.rank
                 );
                 renderOpponentHand();
+                
+                // Add chat message
+                if (isSuitChange) {
+                    addChatMessage('opponent', getSuitChangeMessage(card.suit));
+                } else {
+                    addChatMessage('opponent', getRandomSuitMessage(card.suit));
+                }
             }
 
             // Place card on table
@@ -854,6 +1035,86 @@
             }, 500);
 
             return true;
+        }
+        
+        // Get suit-specific message
+        function getSuitChangeMessage(suit) {
+            const messages = {
+                'hearts': "Let's talk about our feelings.",
+                'diamonds': "I'm pulling rank on you.",
+                'clubs': "Let's see who's better-educated.",
+                'spades': "Time to be holier-than-thou."
+            };
+            return messages[suit] || 'I played a card!';
+        }
+        
+        // Dialogue banks for each suit (1930s British boarding school argument)
+        const dialogueBanks = {
+            hearts: [
+                "That makes me angry.",
+                "Why don't you love me?",
+                "You've hurt my feelings terribly.",
+                "I find your behavior deeply wounding.",
+                "How dare you speak to me in that tone!",
+                "You're making me feel quite miserable.",
+                "I thought we were friends.",
+                "Your coldness is unbearable.",
+                "This is breaking my heart.",
+                "I shall never forgive you for this.",
+                "You don't care about anyone but yourself!",
+                "I'm terribly upset with you."
+            ],
+            diamonds: [
+                "Your father is a nobody.",
+                "I saw you use the wrong spoon.",
+                "My family has been here for generations.",
+                "You're not from the right sort of people.",
+                "I doubt your family even has a coat of arms.",
+                "One can tell you weren't raised properly.",
+                "My uncle is an Earl, you know.",
+                "You clearly don't understand society.",
+                "I've been invited to the headmaster's table.",
+                "Your people are merely tradesmen.",
+                "My family summers in the Cotswolds.",
+                "You wouldn't understand our circles."
+            ],
+            clubs: [
+                "Well, you know what Ovid says about that.",
+                "I think I'm the Admiral Nelson in this situation.",
+                "Clearly you haven't read your Cicero.",
+                "Perhaps if you'd paid attention in Classics...",
+                "As any educated person would know...",
+                "I've mastered Greek and Latin, unlike some.",
+                "Your Latin pronunciation is atrocious.",
+                "Have you even studied the Peloponnesian Wars?",
+                "I won the Latin prize, actually.",
+                "My essay on Virgil was highly commended.",
+                "You wouldn't understand the finer points of rhetoric.",
+                "I'm afraid your scholarship is rather lacking."
+            ],
+            spades: [
+                "That's not very Christian of you.",
+                "Spare the rod and spoil the child.",
+                "God will judge you for this.",
+                "The Lord sees all your wickedness.",
+                "You'll answer for this on Judgment Day.",
+                "Have you no fear of divine retribution?",
+                "The wages of sin is death, you know.",
+                "I pray for your immortal soul.",
+                "Your behavior is positively heathen.",
+                "The Almighty frowns upon such conduct.",
+                "This is blasphemy of the highest order.",
+                "I shall say extra prayers for you tonight."
+            ]
+        };
+        
+        // Get a random message for a suit (for non-suit-change moves)
+        function getRandomSuitMessage(suit) {
+            const messages = dialogueBanks[suit];
+            if (!messages || messages.length === 0) {
+                return 'I played a card!';
+            }
+            return messages[Math.floor(Math.random() * messages.length)];
         }
 
         // Player's turn
@@ -1270,6 +1531,7 @@
             document.getElementById('new-game-btn').classList.remove('confirm');
             
             dealCards();
+            clearChat();
             saveGame();
             renderAllCards();
             render();
