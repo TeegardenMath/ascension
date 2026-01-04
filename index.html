@@ -113,6 +113,44 @@
             border-color: #ff6b6b;
         }
         
+        .ai-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 1.2rem;
+            background: rgba(212, 175, 55, 0.2);
+            border-radius: 10px;
+            border: 1px solid var(--gold);
+            font-size: 1.1rem;
+        }
+        
+        .ai-selector label {
+            color: var(--gold-light);
+            font-weight: 600;
+        }
+        
+        .ai-selector select {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.3rem 0.6rem;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            border-radius: 6px;
+            cursor: pointer;
+            outline: none;
+        }
+        
+        .ai-selector select:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+        
+        .ai-selector select option {
+            background: var(--felt-dark);
+            color: var(--cream);
+        }
+        
         .win-tracker {
             display: flex;
             align-items: center;
@@ -176,6 +214,11 @@
             position: relative;
             overflow: hidden;
             animation: dealCard 0.4s ease-out both;
+        }
+        
+        .card-back::after {
+            content: '✦';
+            font-size: 2.5rem;
         }
         
         .card-back::before {
@@ -604,6 +647,15 @@
         <div class="game-board">
             <div class="status-bar">
                 <button class="control-btn" id="new-game-btn" onclick="handleNewGame()">New Game</button>
+                <div class="ai-selector">
+                    <label for="ai-strategy">Opponent:</label>
+                    <select id="ai-strategy" onchange="handleStrategyChange()">
+                        <option value="random">Random</option>
+                        <option value="play-high">Play High</option>
+                        <option value="play-low">Play Low</option>
+                        <option value="smart">Smart</option>
+                    </select>
+                </div>
                 <div class="win-tracker">
                     <span class="win-label">Wins:</span>
                     <span class="win-count" id="player-wins">0</span>
@@ -664,7 +716,8 @@
             currentTurn: 'opponent', // opponent goes first
             gameOver: false,
             playerWins: 0,
-            opponentWins: 0
+            opponentWins: 0,
+            aiStrategy: 'random'
         };
         
         let newGameConfirm = false;
@@ -709,8 +762,33 @@
             const deck = shuffleDeck(createDeck());
             gameState.playerHand = deck.slice(0, 10);
             gameState.opponentHand = deck.slice(10, 20);
-            gameState.tableCard = null;
-            gameState.currentTurn = 'opponent';
+            
+            // Find a starting card that gives the player at least one legal move
+            let startCardIndex = 20;
+            let attempts = 0;
+            const maxAttempts = 32; // Remaining cards after dealing hands
+            
+            while (startCardIndex < 52 && attempts < maxAttempts) {
+                const candidateCard = deck[startCardIndex];
+                
+                // Check if player would have any legal moves with this starting card
+                if (hasLegalMoves(gameState.playerHand, candidateCard)) {
+                    gameState.tableCard = candidateCard;
+                    break;
+                }
+                
+                startCardIndex++;
+                attempts++;
+            }
+            
+            // Fallback: if somehow no valid starting card found, just use the first one
+            // (This should be extremely rare)
+            if (!gameState.tableCard) {
+                gameState.tableCard = deck[20];
+            }
+            
+            // Player goes first
+            gameState.currentTurn = 'player';
             gameState.gameOver = false;
         }
 
@@ -796,7 +874,7 @@
             }
         }
 
-        // Opponent's turn (random legal move)
+        // Opponent's turn (uses selected strategy)
         function opponentTurn() {
             console.log('opponentTurn called');
             if (gameState.gameOver) return;
@@ -811,15 +889,87 @@
                 return;
             }
 
-            const randomCard = legalMoves[Math.floor(Math.random() * legalMoves.length)];
-            console.log('Opponent playing:', randomCard);
+            let cardToPlay;
             
-            if (playCard(randomCard, false)) {
+            // For the first move of the game, just pick randomly regardless of strategy
+            if (!gameState.tableCard) {
+                cardToPlay = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+            } else {
+                switch(gameState.aiStrategy) {
+                    case 'play-high':
+                        cardToPlay = selectHighestCard(legalMoves);
+                        break;
+                    case 'play-low':
+                        cardToPlay = selectLowestCard(legalMoves);
+                        break;
+                    case 'smart':
+                        cardToPlay = selectSmartCard(legalMoves, gameState.tableCard, gameState.opponentHand);
+                        break;
+                    case 'random':
+                    default:
+                        cardToPlay = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+                }
+            }
+            
+            console.log('Opponent playing:', cardToPlay, 'using strategy:', gameState.aiStrategy);
+            
+            if (playCard(cardToPlay, false)) {
                 gameState.currentTurn = 'player';
                 saveGame();
                 updateTurnIndicator();
                 updatePlayerCardStates(); // Enable player's legal cards
             }
+        }
+        
+        // Select highest ranked card
+        function selectHighestCard(cards) {
+            return cards.reduce((highest, card) => 
+                rankValues[card.rank] > rankValues[highest.rank] ? card : highest
+            );
+        }
+        
+        // Select lowest ranked card
+        function selectLowestCard(cards) {
+            return cards.reduce((lowest, card) => 
+                rankValues[card.rank] < rankValues[lowest.rank] ? card : lowest
+            );
+        }
+        
+        // Smart strategy: prefer switching to suits where opponent has high cards
+        function selectSmartCard(legalMoves, tableCard, hand) {
+            // Find the highest card in each suit in opponent's hand
+            const suitHighest = {};
+            hand.forEach(card => {
+                if (!suitHighest[card.suit] || rankValues[card.rank] > rankValues[suitHighest[card.suit].rank]) {
+                    suitHighest[card.suit] = card;
+                }
+            });
+            
+            // Separate moves into suit changes and rank ups
+            const suitChanges = legalMoves.filter(card => card.suit !== tableCard.suit);
+            const rankUps = legalMoves.filter(card => card.suit === tableCard.suit);
+            
+            // If we can change suits, prefer switching to a suit where we have a high card
+            if (suitChanges.length > 0) {
+                // Find suit changes that lead to suits where we're strong
+                const goodSuitChanges = suitChanges.filter(card => {
+                    const ourHighest = suitHighest[card.suit];
+                    // Consider it a good switch if we have a high card in that suit
+                    return ourHighest && rankValues[ourHighest.rank] >= 10; // 10, J, Q, K, A
+                });
+                
+                if (goodSuitChanges.length > 0) {
+                    // Among good switches, pick the one to the suit where we're strongest
+                    return goodSuitChanges.reduce((best, card) => {
+                        const bestHighest = suitHighest[best.suit];
+                        const cardHighest = suitHighest[card.suit];
+                        return rankValues[cardHighest.rank] > rankValues[bestHighest.rank] ? card : best;
+                    });
+                }
+            }
+            
+            // Otherwise, play the highest legal card
+            return selectHighestCard(legalMoves);
         }
 
         // Check for game over
@@ -924,7 +1074,6 @@
             gameState.opponentHand.forEach((_, index) => {
                 const cardBack = document.createElement('div');
                 cardBack.className = 'card-back';
-                cardBack.textContent = 'A';
                 cardBack.style.animationDelay = `${index * 0.05}s`;
                 opponentHandEl.appendChild(cardBack);
             });
@@ -1055,7 +1204,6 @@
             gameState.opponentHand.forEach((_, index) => {
                 const cardBack = document.createElement('div');
                 cardBack.className = 'card-back';
-                cardBack.textContent = 'A';
                 opponentHandEl.appendChild(cardBack);
             });
         }
@@ -1081,11 +1229,23 @@
             localStorage.setItem('ascensionGame', JSON.stringify(gameState));
         }
 
+        // Handle AI strategy change
+        function handleStrategyChange() {
+            const select = document.getElementById('ai-strategy');
+            gameState.aiStrategy = select.value;
+            saveGame();
+            console.log('AI strategy changed to:', gameState.aiStrategy);
+        }
+        
         // Load game from localStorage
         function loadGame() {
             const saved = localStorage.getItem('ascensionGame');
             if (saved) {
                 gameState = JSON.parse(saved);
+                
+                // Restore AI strategy selector
+                document.getElementById('ai-strategy').value = gameState.aiStrategy || 'random';
+                
                 renderAllCards();
                 render();
                 
@@ -1095,6 +1255,7 @@
                         opponentTurn();
                     }, 1000);
                 }
+                // Note: if it's player's turn, they can just start playing
                 
                 return true;
             }
@@ -1113,10 +1274,7 @@
             renderAllCards();
             render();
             
-            // Opponent plays first
-            setTimeout(() => {
-                opponentTurn();
-            }, 1000);
+            // Player always has a legal move at start now
         }
         
         // Handle new game button with confirmation
