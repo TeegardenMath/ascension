@@ -271,24 +271,40 @@
         }
         
         .card {
-            width: 100px;
-            height: 140px;
+            width: 65px;
+            height: 91px;
             background: white;
-            border: 3px solid var(--card-black);
-            border-radius: 10px;
+            border: 2px solid var(--card-black);
+            border-radius: 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
-            padding: 0.6rem;
+            padding: 0.4rem;
             font-family: 'Playfair Display', serif;
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
             box-shadow: 0 8px 16px var(--shadow);
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s, opacity 0.3s;
             position: relative;
             animation: playCard 0.5s ease-out both;
+        }
+        
+        .card-rank {
+            font-size: 1.4rem;
+            line-height: 1;
+        }
+        
+        .card-suit {
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+        
+        .card-rank-bottom {
+            font-size: 1.4rem;
+            line-height: 1;
+            transform: rotate(180deg);
         }
         
         .card.removing {
@@ -318,32 +334,35 @@
             color: var(--card-black);
         }
         
-        .card-rank {
-            font-size: 2rem;
-            line-height: 1;
-        }
-        
-        .card-suit {
-            font-size: 2.5rem;
-            line-height: 1;
-        }
-        
-        .card-rank-bottom {
-            font-size: 2rem;
-            line-height: 1;
-            transform: rotate(180deg);
-        }
-        
         .player-area {
             animation: fadeIn 0.5s ease-out 0.6s both;
+            container-type: inline-size;
         }
         
         .player-hand {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            max-width: 100%;
             justify-content: center;
-            gap: 0.6rem;
-            flex-wrap: wrap;
+            gap: 0.5rem;
             transition: all 0.3s ease-out;
+            padding: 0.5rem 0;
+        }
+        
+        /* When container is wide enough for 10 cards, show them all in one row */
+        @container (min-width: 700px) {
+            .player-hand {
+                grid-template-columns: repeat(10, minmax(60px, 70px));
+            }
+        }
+        
+        /* When container is narrower, force 5 columns for even split with fixed width */
+        @container (max-width: 699px) {
+            .player-hand {
+                grid-template-columns: repeat(5, 65px);
+                max-width: 350px;
+                margin: 0 auto;
+            }
         }
         
         .player-hand > .card {
@@ -362,6 +381,85 @@
             flex-direction: column;
             height: fit-content;
             max-height: 700px;
+            transition: all 0.4s ease-out;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .chat-panel.game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+            width: 450px;
+            max-height: 85vh;
+            background: linear-gradient(135deg, #0f6b45 0%, #0a4d31 100%);
+            border: 4px solid var(--gold);
+            box-shadow: 
+                0 0 60px rgba(212, 175, 55, 0.3),
+                0 20px 80px rgba(0, 0, 0, 0.8);
+            animation: chatPopOut 0.5s ease-out;
+            padding: 2rem;
+        }
+        
+        @keyframes chatPopOut {
+            from {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0.5;
+            }
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .chat-game-end {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 3px solid var(--gold);
+        }
+        
+        .chat-end-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: 0.15em;
+            text-shadow: 
+                2px 2px 4px var(--shadow),
+                0 0 20px rgba(212, 175, 55, 0.4);
+        }
+        
+        .chat-new-game {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 3px solid var(--gold);
+        }
+        
+        .chat-new-game .btn {
+            background: var(--gold);
+            color: var(--felt-dark);
+            font-size: 1.4rem;
+            padding: 1rem 3rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .chat-new-game .btn:hover {
+            background: var(--gold-light);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6);
+        }
+        
+        .chat-panel.game-over .chat-messages {
+            max-height: 45vh;
+            min-height: 200px;
+        }
+        
+        .chat-panel.game-over .chat-header {
+            color: var(--gold);
+            font-size: 1.6rem;
         }
         
         .chat-header {
@@ -476,13 +574,12 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.25);
             z-index: 1000;
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
-            padding-top: 10vh;
             animation: fadeIn 0.3s ease-out;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(1px);
         }
         
         .modal.active {
@@ -490,14 +587,21 @@
         }
         
         .modal-content {
-            background: linear-gradient(135deg, rgba(13, 94, 58, 0.95) 0%, rgba(9, 64, 41, 0.95) 100%);
+            background: linear-gradient(135deg, rgba(13, 94, 58, 0.98) 0%, rgba(9, 64, 41, 0.98) 100%);
             padding: 2rem 3rem;
             border-radius: 20px;
             text-align: center;
             border: 3px solid var(--gold);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             animation: scaleIn 0.4s ease-out;
-            max-width: 500px;
+            max-width: 400px;
+            position: relative;
+        }
+        
+        .modal-content.game-end {
+            /* Smaller modal for game end so chat is visible */
+            max-width: 350px;
+            padding: 1.5rem 2rem;
         }
         
         .rules-content {
@@ -675,7 +779,7 @@
             }
         }
         
-        @media (max-width: 600px) {
+        @media (max-width: 900px) {
             body {
                 padding: 1rem 0.5rem;
             }
@@ -705,18 +809,18 @@
             }
             
             .card {
-                width: 70px;
-                height: 100px;
-                padding: 0.4rem;
+                width: 55px;
+                height: 77px;
+                padding: 0.3rem;
                 border-width: 2px;
             }
             
             .card-rank, .card-rank-bottom {
-                font-size: 1.5rem;
+                font-size: 1.2rem;
             }
             
             .card-suit {
-                font-size: 1.8rem;
+                font-size: 1.5rem;
             }
             
             .card-back {
@@ -727,6 +831,7 @@
             
             .player-hand, .opponent-hand {
                 gap: 0.4rem;
+                flex-wrap: wrap;
             }
             
             .table-label {
@@ -814,15 +919,21 @@
             </div>
         </div>
         
-        <div class="chat-panel">
+        <div class="chat-panel" id="chat-panel">
+            <div class="chat-game-end" id="chat-game-end" style="display: none;">
+                <div class="chat-end-title" id="chat-end-title">VICTORY</div>
+            </div>
             <div class="chat-header">Messages</div>
             <div class="chat-messages" id="chat-messages">
+            </div>
+            <div class="chat-new-game" id="chat-new-game" style="display: none;">
+                <button class="btn" onclick="newGame()">New Game</button>
             </div>
         </div>
     </div>
     
     <div class="modal" id="game-modal">
-        <div class="modal-content">
+        <div class="modal-content game-end">
             <h2 class="modal-title" id="modal-title">Victory</h2>
             <p class="modal-message" id="modal-message">You win!</p>
             <button class="btn" onclick="newGame()">New Game</button>
@@ -1256,19 +1367,18 @@
                 gameState.opponentWins++;
             }
             
-            const modal = document.getElementById('game-modal');
-            const title = document.getElementById('modal-title');
-            const message = document.getElementById('modal-message');
+            // Show game over state in chat panel
+            const chatPanel = document.getElementById('chat-panel');
+            const endTitle = document.getElementById('chat-end-title');
+            const endSection = document.getElementById('chat-game-end');
+            const newGameSection = document.getElementById('chat-new-game');
             
-            if (playerWon) {
-                title.textContent = 'VICTORY';
-                message.textContent = 'Your opponent has no legal moves. You win!';
-            } else {
-                title.textContent = 'DEFEAT';
-                message.textContent = 'You have no legal moves. You lose.';
-            }
+            endTitle.textContent = playerWon ? 'VICTORY' : 'DEFEAT';
+            endSection.style.display = 'block';
+            newGameSection.style.display = 'block';
             
-            modal.classList.add('active');
+            chatPanel.classList.add('game-over');
+            
             saveGame();
             render(); // Update win counts display
         }
@@ -1341,6 +1451,8 @@
         // Initial render of all cards (only called once at game start)
         function renderAllCards() {
             console.log('Initial card render');
+            console.log('Player hand length:', gameState.playerHand.length);
+            console.log('Opponent hand length:', gameState.opponentHand.length);
 
             // Render opponent hand (card backs)
             const opponentHandEl = document.getElementById('opponent-hand');
@@ -1355,6 +1467,8 @@
             // Render player hand
             const playerHandEl = document.getElementById('player-hand');
             playerHandEl.innerHTML = '';
+            console.log('Rendering', gameState.playerHand.length, 'player cards');
+            
             gameState.playerHand.forEach((card, index) => {
                 const cardEl = createCardElement(card, true, false, false);
                 cardEl.style.animationDelay = `${index * 0.05}s`;
@@ -1364,19 +1478,30 @@
                 cardEl.dataset.rank = card.rank;
                 
                 // Attach click handler that will always check current state
-                cardEl.onclick = (e) => {
+                const clickHandler = (e) => {
                     e.stopPropagation();
+                    console.log('Card clicked!', card);
                     const isLegal = isLegalMove(card, gameState.tableCard);
                     const canPlay = gameState.currentTurn === 'player' && !gameState.gameOver;
+                    console.log('Is legal?', isLegal, 'Can play?', canPlay, 'Current turn:', gameState.currentTurn);
                     
                     if (isLegal && canPlay) {
-                        console.log('Card clicked:', card);
                         handlePlayerCardClick(card);
+                    } else {
+                        console.warn('Card not playable. Legal:', isLegal, 'Turn:', gameState.currentTurn, 'Game over:', gameState.gameOver);
                     }
                 };
                 
+                cardEl.onclick = clickHandler;
+                // Also try addEventListener as backup
+                cardEl.addEventListener('click', clickHandler);
+                
+                console.log('Added card', card.rank, card.suit, 'with click handler');
+                
                 playerHandEl.appendChild(cardEl);
             });
+            
+            console.log('Player hand DOM has', playerHandEl.children.length, 'cards');
             
             // Now update their states
             updatePlayerCardStates();
@@ -1538,17 +1663,30 @@
 
         // New game
         function newGame() {
+            console.log('=== NEW GAME STARTING ===');
+            
+            // Hide game over state
+            const chatPanel = document.getElementById('chat-panel');
+            const endSection = document.getElementById('chat-game-end');
+            const newGameSection = document.getElementById('chat-new-game');
+            
+            chatPanel.classList.remove('game-over');
+            endSection.style.display = 'none';
+            newGameSection.style.display = 'none';
+            
             document.getElementById('game-modal').classList.remove('active');
             newGameConfirm = false;
             document.getElementById('new-game-btn').textContent = 'New Game';
             document.getElementById('new-game-btn').classList.remove('confirm');
             
             dealCards();
+            console.log('Cards dealt. Player hand:', gameState.playerHand.length, 'Opponent hand:', gameState.opponentHand.length);
             clearChat();
             saveGame();
             renderAllCards();
             render();
             
+            console.log('=== NEW GAME COMPLETE ===');
             // Player always has a legal move at start now
         }
         
