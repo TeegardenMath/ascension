@@ -461,7 +461,7 @@
         
         .card.disabled {
             opacity: 0.4;
-            cursor: not-allowed;
+            cursor: not-allowed !important;
         }
         
         .card.disabled:hover {
@@ -794,6 +794,7 @@
                         <span class="win-count" id="opponent-wins">0</span>
                     </div>
                     <button class="control-btn" onclick="showRules()">Rules</button>
+                    <button class="control-btn" onclick="handleReset()">Reset</button>
                 </div>
                 
                 <div class="play-area">
@@ -1274,7 +1275,7 @@
 
         // Render the game
         function render() {
-            console.log('Rendering - Current turn:', gameState.currentTurn, 'Table card:', gameState.tableCard);
+            console.log('Rendering - Current turn:', gameState.currentTurn, 'Table card:', gameState.tableCard, 'Game over:', gameState.gameOver);
             
             // Update win counts
             document.getElementById('player-wins').textContent = gameState.playerWins;
@@ -1304,17 +1305,29 @@
         // Update player card states without re-rendering
         function updatePlayerCardStates() {
             const playerHandEl = document.getElementById('player-hand');
-            const cards = playerHandEl.children;
+            const cardElements = Array.from(playerHandEl.children);
             
-            gameState.playerHand.forEach((card, index) => {
-                if (index >= cards.length) return; // Safety check
+            console.log('Updating card states. Current turn:', gameState.currentTurn, 'Game over:', gameState.gameOver);
+            
+            cardElements.forEach(cardEl => {
+                const suit = cardEl.dataset.suit;
+                const rank = cardEl.dataset.rank;
                 
-                const cardEl = cards[index];
+                // Find the corresponding card in gameState
+                const card = gameState.playerHand.find(c => c.suit === suit && c.rank === rank);
+                
+                if (!card) {
+                    // Card is being removed, skip it
+                    return;
+                }
+                
                 const isLegal = isLegalMove(card, gameState.tableCard);
                 const canPlay = gameState.currentTurn === 'player' && !gameState.gameOver;
                 const shouldBeClickable = isLegal && canPlay;
                 
-                // Update disabled class
+                console.log(`Card ${rank}${suit}: isLegal=${isLegal}, canPlay=${canPlay}, currentTurn=${gameState.currentTurn}`);
+                
+                // Update disabled class and cursor
                 if (shouldBeClickable) {
                     cardEl.classList.remove('disabled');
                     cardEl.style.cursor = 'pointer';
@@ -1560,6 +1573,15 @@
             }
         }
         
+        // Handle reset button - clears save data and win counts
+        function handleReset() {
+            if (confirm('Reset all data including win counts? This will start fresh.')) {
+                localStorage.removeItem('ascensionGame');
+                console.log('Save data cleared');
+                location.reload();
+            }
+        }
+        
         // Show rules modal
         function showRules() {
             document.getElementById('rules-modal').classList.add('active');
@@ -1572,10 +1594,40 @@
 
         // Initialize game
         function init() {
+            // Check for corrupted state - if turn is opponent but no game is in progress, clear it
+            const saved = localStorage.getItem('ascensionGame');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    // If it looks corrupted (opponent's turn at start with no moves made), clear it
+                    if (state.currentTurn === 'opponent' && 
+                        state.playerHand.length === 10 && 
+                        state.opponentHand.length === 10) {
+                        console.warn('Detected potentially corrupted save state, clearing...');
+                        localStorage.removeItem('ascensionGame');
+                        newGame();
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error parsing saved game:', e);
+                    localStorage.removeItem('ascensionGame');
+                }
+            }
+            
             if (!loadGame()) {
                 newGame();
             }
         }
+        
+        // Debug function to clear save (can be called from console)
+        function clearSave() {
+            localStorage.removeItem('ascensionGame');
+            console.log('Save cleared! Reloading...');
+            location.reload();
+        }
+        
+        // Make it accessible globally for debugging
+        window.clearSave = clearSave;
 
         // Start the game
         init();
